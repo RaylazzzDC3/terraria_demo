@@ -3,6 +3,7 @@ import { Game } from "./game";
 import { Scene } from "./scene";
 import { Player } from "./player";
 import { vector2D } from "./utils";
+import { Debug } from "./debug";
 import World from "./world";
 
 let canvas = document.querySelector("canvas") as HTMLCanvasElement;
@@ -24,3 +25,5 @@ scene.addEntity(player);
 
 const game = new Game(context, scene);
 game.start();
+
+Debug.init(context, game);

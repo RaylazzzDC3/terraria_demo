@@ -13,21 +13,11 @@ export default class StaticObject {
         this.id = id;
     }
 
-    public render(context: CanvasRenderingContext2D, camera: Camera, debugmode: boolean) {
+    public render(context: CanvasRenderingContext2D, camera: Camera) {
         const scaledPosition = vector2D.multiply(this.position, StaticObject.TILE_SIZE);
         const worldPosition = camera.worldToScreen(scaledPosition);
 
         context.fillStyle = "#a1a1a1ff";
         context.fillRect(worldPosition.x, worldPosition.y, StaticObject.TILE_SIZE, StaticObject.TILE_SIZE);
-
-        if (!debugmode) return;
-
-        context.strokeStyle = "#9000ffff";
-        context.strokeRect(
-            worldPosition.x - StaticObject.TILE_SIZE,
-            worldPosition.y - StaticObject.TILE_SIZE,
-            StaticObject.TILE_SIZE * 2,
-            StaticObject.TILE_SIZE * 2
-        );
     }
 }

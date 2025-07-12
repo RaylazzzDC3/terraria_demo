@@ -10,8 +10,8 @@ export abstract class Entity {
         this.position = position;
     }
 
-    public moveAndCollide(velocity: vector2D, staticObjects: StaticObject[]): vector2D | null {
-        const velocitySegment = new Segment(this.position, vector2D.add(this.position, velocity));
+    private simulateMovement(startPoint: vector2D, velocity: vector2D, staticObjects: StaticObject[]): vector2D {
+        const velocitySegment = new Segment(startPoint, vector2D.add(startPoint, velocity));
         let intersections: vector2D[] = [];
 
         for (const staticObject of staticObjects) {
@@ -20,28 +20,67 @@ export abstract class Entity {
                 vector2D.subtract(scaledPosition, staticObject.size),
                 vector2D.multiply(staticObject.size, 2)
             );
-            const localIntersections = velocitySegment.getIntersectionsWithBody(staticBody);
+
+            let localIntersections = velocitySegment.getIntersectionsWithBody(staticBody);
 
             if (localIntersections == null) continue;
+
+            localIntersections = localIntersections.filter((point) => {
+                const a = point.tag === "top" || point.tag === "bottom";
+                const b = point.tag === "left" || point.tag === "right";
+                const c = point.x === staticBody.position.x || point.x === staticBody.position.x + staticBody.size.x;
+                const d = point.y === staticBody.position.y || point.y === staticBody.position.y + staticBody.size.y;
+
+                if ((a && c) || (b && d)) {
+                    return false;
+                } else {
+                    return true;
+                }
+            });
 
             intersections = intersections.concat(localIntersections);
         }
 
         const sortedIntersections = intersections.sort((a, b) => {
-            const distanceA = vector2D.distance(this.position, a);
-            const distanceB = vector2D.distance(this.position, b);
+            const distanceA = vector2D.distance(startPoint, a);
+            const distanceB = vector2D.distance(startPoint, b);
             return distanceA - distanceB;
         });
 
         if (sortedIntersections.length === 0) {
-            return null;
+            return vector2D.add(startPoint, velocity);
         }
 
         const closestIntersection = sortedIntersections[0];
-
-        return closestIntersection;
+        // Décale légèrement le point d'intersection pour éviter d'être collé/piégé
+        const epsilon = 0.01;
+        let corrected = new vector2D(closestIntersection.x, closestIntersection.y);
+        if (closestIntersection.tag === "left") corrected.x -= epsilon;
+        if (closestIntersection.tag === "right") corrected.x += epsilon;
+        if (closestIntersection.tag === "top") corrected.y -= epsilon;
+        if (closestIntersection.tag === "bottom") corrected.y += epsilon;
+        corrected.tag = closestIntersection.tag;
+        return corrected;
     }
 
-    abstract update(delta: number, staticObject: StaticObject[], camera: Camera): void;
-    abstract render(context: CanvasRenderingContext2D, camera: Camera, debugmode: boolean): void;
+    public moveAndCollide(velocity: vector2D, staticObjects: StaticObject[]): vector2D {
+        const supposedEnd = vector2D.add(this.position, velocity);
+
+        const endA = this.simulateMovement(this.position, velocity, staticObjects);
+
+        let newVelocity: vector2D = new vector2D(0, 0);
+
+        if (endA.tag === "top" || endA.tag === "bottom") {
+            newVelocity = new vector2D(supposedEnd.x - endA.x, 0);
+        } else if (endA.tag === "left" || endA.tag === "right") {
+            newVelocity = new vector2D(0, supposedEnd.y - endA.y);
+        }
+
+        const endB = this.simulateMovement(endA, newVelocity, staticObjects);
+
+        return endB;
+    }
+
+    abstract update(delta: number, staticObject: StaticObject[]): void;
+    abstract render(context: CanvasRenderingContext2D, camera: Camera): void;
 }

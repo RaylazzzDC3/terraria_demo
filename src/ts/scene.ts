@@ -15,23 +15,23 @@ export class Scene {
         this.entities.push(entity);
     }
 
-    public update(delta: number, camera: Camera) {
+    public update(delta: number) {
         for (const entity of this.entities) {
-            entity.update(delta, this.staticObjects, camera);
+            entity.update(delta, this.staticObjects);
         }
     }
 
-    public render(context: CanvasRenderingContext2D, camera: Camera, debugmode: boolean) {
+    public render(context: CanvasRenderingContext2D, camera: Camera) {
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
         context.fillStyle = "#292929ff";
         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
 
         for (const staticObject of this.staticObjects) {
-            staticObject.render(context, camera, debugmode);
+            staticObject.render(context, camera);
         }
 
         for (const entity of this.entities) {
-            entity.render(context, camera, debugmode);
+            entity.render(context, camera);
         }
     }
 }

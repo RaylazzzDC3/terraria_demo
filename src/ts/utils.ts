@@ -1,6 +1,9 @@
+import StaticObject from "./statics";
+
 export class vector2D {
     public x: number;
     public y: number;
+    public tag: string | undefined = undefined;
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -94,9 +97,11 @@ export class Segment {
     public getIntersectionsWithBody(body: Body): vector2D[] | null {
         const intersections: vector2D[] = [];
 
-        for (const segment of Object.values(body.segments)) {
+        for (const [name, segment] of Object.entries(body.segments)) {
             const intersection = this.getIntersectionsWithSegment(segment);
+
             if (intersection) {
+                intersection.tag = name;
                 intersections.push(intersection);
             }
         }
@@ -148,4 +153,19 @@ export class Body {
             bounds1.bottom > bounds2.top
         );
     }
+}
+
+export function raycast(start: vector2D, end: vector2D, items: StaticObject[]): StaticObject[] | null {
+    const segment = new Segment(start, end);
+    const blocks: StaticObject[] = [];
+
+    for (const item of items) {
+        const scaledPosition = vector2D.multiply(item.position, StaticObject.TILE_SIZE);
+        const body = new Body(scaledPosition, item.size);
+        const intersection = segment.getIntersectionsWithBody(body);
+
+        if (intersection) blocks.push(item);
+    }
+
+    return blocks.length > 0 ? blocks : null;
 }
